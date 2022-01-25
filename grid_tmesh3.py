@@ -84,7 +84,7 @@ def generate_hv_lines(hcells,vcells,hdiv,vdiv,poldegree,nlines):
     return Lines 
 
 
-# here we draw a mesh from a given list of lines 
+# here we draw lines from a given list 
 def draw_lines (Lines,fig): 
     
     nlines = len(Lines) 
