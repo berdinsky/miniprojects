@@ -93,7 +93,7 @@ def draw_lines (Lines,fig):
         tuple = Lines[i]
         if tuple[0]==0: 
             hline_y = tuple[1]; hline_xmin = tuple[2]; hline_xmax = tuple[3]
-            fig = draw_horizontal_line(hline_y, hline_xmin, hline_xmax,fig)
+            fig = draw_horizontal_line(hline_y,hline_xmin,hline_xmax,fig)
         else: 
             vline_x = tuple[1]; vline_ymin = tuple[2]; vline_ymax = tuple[3]    
             fig = draw_vertical_line(vline_x, vline_ymin, vline_ymax,fig)
