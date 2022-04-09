@@ -361,30 +361,36 @@ def knots_nonint(segments,list_intervals,left_end_bool,right_end_bool,line_c_int
     
     if left_end_bool==True: 
         tuple_one_list=[left_end_int,"blank",left_end_int+1,left_end_int+2,left_end_int+3]; blank_ind=2
-        gen_knots(segments,left_end_int,line_c_int,line_c_frac,div,div2,tuple_one_list,blank_ind,list_knots_nonint,line_type)
+        gen_knots(segments,left_end_int,line_c_int,line_c_frac,div,div2,tuple_one_list,blank_ind,list_knots_nonint,\
+        line_type)
     else: 
         tuple_one_list=[left_end_int-1,left_end_int,"blank",left_end_int+1,left_end_int+2]; blank_ind=3
-        gen_knots(segments,left_end_int,line_c_int,line_c_frac,div,div2,tuple_one_list,blank_ind,list_knots_nonint,line_type)
+        gen_knots(segments,left_end_int,line_c_int,line_c_frac,div,div2,tuple_one_list,blank_ind,list_knots_nonint,\
+        line_type)
 
     mid_knot=left_end_int+1; L=len(list_intervals)
     for i in range(0,L-2,2):
         while mid_knot<=list_intervals[i+1]-1:
             tuple_one_list=[mid_knot-1,mid_knot,"blank",mid_knot+1,mid_knot+2]; blank_ind=3
-            gen_knots(segments,mid_knot,line_c_int,line_c_frac,div,div2,tuple_one_list,blank_ind,list_knots_nonint,line_type)
+            gen_knots(segments,mid_knot,line_c_int,line_c_frac,div,div2,tuple_one_list,blank_ind,list_knots_nonint,\
+            line_type)
             mid_knot=mid_knot+1  
         mid_knot=list_intervals[i+2]
     
     while mid_knot<=right_end_int-1:
         tuple_one_list=[mid_knot-1,mid_knot,"blank",mid_knot+1,mid_knot+2]; blank_ind=3
-        gen_knots(segments,mid_knot,line_c_int,line_c_frac,div,div2,tuple_one_list,blank_ind,list_knots_nonint,line_type)
+        gen_knots(segments,mid_knot,line_c_int,line_c_frac,div,div2,tuple_one_list,blank_ind,list_knots_nonint,\
+        line_type)
         mid_knot=mid_knot+1
     
     if right_end_bool==True:  
         tuple_one_list=[right_end_int-2,right_end_int-1,right_end_int,"blank",right_end_int+1]; blank_ind=4
-        gen_knots(segments,right_end_int,line_c_int,line_c_frac,div,div2,tuple_one_list,blank_ind,list_knots_nonint,line_type)     
+        gen_knots(segments,right_end_int,line_c_int,line_c_frac,div,div2,tuple_one_list,blank_ind,\
+        list_knots_nonint,line_type)     
     else: 
         tuple_one_list=[right_end_int-1,right_end_int,"blank",right_end_int+1,right_end_int+2]; blank_ind=3
-        gen_knots(segments,right_end_int,line_c_int,line_c_frac,div,div2,tuple_one_list,blank_ind,list_knots_nonint,line_type)
+        gen_knots(segments,right_end_int,line_c_int,line_c_frac,div,div2,tuple_one_list,blank_ind,\
+        list_knots_nonint,line_type)
 
     return list_knots_nonint 
 
@@ -454,13 +460,16 @@ for Lines_tuple in Lines:
     if Lines_tuple[0]==0:
         hline_y_int=Lines_tuple[1];hline_y_frac=Lines_tuple[2];hline_xmin=Lines_tuple[3];hline_xmax=Lines_tuple[4]
          
-        list_intervals,left_end_bool,right_end_bool= gen_list_int_main(hsegments,hline_y_int,hline_y_frac,hline_xmin,hline_xmax)      
+        list_intervals,left_end_bool,right_end_bool= gen_list_int_main(hsegments,hline_y_int,hline_y_frac,\
+        hline_xmin,hline_xmax)      
             
         #print(); print(list_intervals,left_end_bool,right_end_bool)
 
-        list_knots_int=knots_int(list_intervals,left_end_bool,right_end_bool,0,hcells,vcells,hline_y_int,hline_y_frac,vdiv) 
+        list_knots_int=knots_int(list_intervals,left_end_bool,right_end_bool,0,hcells,vcells,hline_y_int,\
+        hline_y_frac,vdiv) 
 
-        list_knots_nonint=knots_nonint(vsegments,list_intervals,left_end_bool,right_end_bool,hline_y_int,hline_y_frac,vdiv,hdiv,0)
+        list_knots_nonint=knots_nonint(vsegments,list_intervals,left_end_bool,right_end_bool,hline_y_int,\
+        hline_y_frac,vdiv,hdiv,0)
         
         print()   
         for list_knots_nonint_tuple in list_knots_nonint: print(list_knots_nonint_tuple)       
@@ -469,13 +478,16 @@ for Lines_tuple in Lines:
     else: 
         vline_x_int=Lines_tuple[1];vline_x_frac=Lines_tuple[2];vline_ymin=Lines_tuple[3];vline_ymax=Lines_tuple[4]
 
-        list_intervals,left_end_bool,right_end_bool= gen_list_int_main(vsegments,vline_x_int,vline_x_frac,vline_ymin,vline_ymax)      
+        list_intervals,left_end_bool,right_end_bool= gen_list_int_main(vsegments,vline_x_int,vline_x_frac,\
+        vline_ymin,vline_ymax)      
             
         #print(); print(list_intervals,left_end_bool,right_end_bool)       
 
-        list_knots_int=knots_int(list_intervals,left_end_bool,right_end_bool,1,hcells,vcells,vline_x_int,vline_x_frac,hdiv) 
+        list_knots_int=knots_int(list_intervals,left_end_bool,right_end_bool,1,hcells,vcells,vline_x_int,\
+        vline_x_frac,hdiv) 
 
-        list_knots_nonint=knots_nonint(hsegments,list_intervals,left_end_bool,right_end_bool,vline_x_int,vline_x_frac,hdiv,vdiv,1)
+        list_knots_nonint=knots_nonint(hsegments,list_intervals,left_end_bool,right_end_bool,vline_x_int,\
+        vline_x_frac,hdiv,vdiv,1)
         
         print()   
         for list_knots_nonint_tuple in list_knots_nonint: print(list_knots_nonint_tuple)
