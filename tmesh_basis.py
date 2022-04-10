@@ -512,7 +512,7 @@ def draw_spline(list_knots,hcells,vcells):
 # polynomial degree is equal to 3  - it is fixed! 
 poldegree=3
 # here we define the number of horizontal and vertical cells 
-hcells=10;  vcells=10 
+hcells=15;  vcells=15 
 # here we define in how many parts we divide a cell horizontally and vertically  
 hdiv=10;  vdiv=10    
 # number of lines dropped on a grid
