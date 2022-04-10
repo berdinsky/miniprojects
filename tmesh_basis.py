@@ -1,4 +1,8 @@
+from scipy.interpolate import BSpline
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import axes3d
+from matplotlib import style
+import numpy as np
 import random 
 import gc
 #######################################################################################
@@ -247,7 +251,7 @@ def gen_list_int_main(segments,line_c_int,line_c_frac,line_min,line_max):
         if segments_frac_val is not None: 
             list_intervals,left_end_bool,right_end_bool=gen_list_int_core(segments_frac_val.head,line_min,line_max)     
         else:
-            list_intervals=[line_min,line_max],
+            list_intervals=[line_min,line_max]
             left_end_bool = True; right_end_bool= True
     else:     
         list_intervals=[line_min,line_max]          
@@ -308,7 +312,6 @@ def gen_list_int_right(current_node,new_seg_l,new_seg_r,list_intervals):
 # here we list only basis functions with integer knots  
 def knots_int(list_intervals,left_end_bool,right_end_bool,line_type,hcells,vcells,line_c_int,line_c_frac,div):
     list_knots_int=[]; left_end_int=list_intervals[0]; right_end_int=list_intervals[-1]  
-    
     if line_type==0: 
         m=hcells; n=vcells  
     else: 
@@ -356,15 +359,27 @@ def tuple_knots_int(left_knot,line_type,n,line_c_int,line_c_frac,div):
     return tuple 
 
 # here we list only basis functions with one noninteger knots
-def knots_nonint(segments,list_intervals,left_end_bool,right_end_bool,line_c_int,line_c_frac,div,div2,line_type):
+def knots_nonint(segments,list_intervals,left_end_bool,right_end_bool,line_c_int,line_c_frac,div,div2,line_type,\
+                 hcells,vcells):
     list_knots_nonint=[]; left_end_int=list_intervals[0]; right_end_int=list_intervals[-1]-1  
     
     if left_end_bool==True: 
         tuple_one_list=[left_end_int,"blank",left_end_int+1,left_end_int+2,left_end_int+3]; blank_ind=2
+                
         gen_knots(segments,left_end_int,line_c_int,line_c_frac,div,div2,tuple_one_list,blank_ind,list_knots_nonint,\
         line_type)
     else: 
-        tuple_one_list=[left_end_int-1,left_end_int,"blank",left_end_int+1,left_end_int+2]; blank_ind=3
+        
+        if (line_type==0) and (left_end_int<hcells-1): 
+            tuple_one_list=[left_end_int-1,left_end_int,"blank",left_end_int+1,left_end_int+2]; blank_ind=3
+        if (line_type==0) and (left_end_int==hcells-1):
+            tuple_one_list=[left_end_int-2,left_end_int-1,left_end_int,"blank",left_end_int+1]; blank_ind=4
+        
+        if (line_type==1) and (left_end_int<vcells-1):
+            tuple_one_list=[left_end_int-1,left_end_int,"blank",left_end_int+1,left_end_int+2]; blank_ind=3
+        if (line_type==1) and (left_end_int==vcells-1):
+            tuple_one_list=[left_end_int-2,left_end_int-1,left_end_int,"blank",left_end_int+1]; blank_ind=4 
+        
         gen_knots(segments,left_end_int,line_c_int,line_c_frac,div,div2,tuple_one_list,blank_ind,list_knots_nonint,\
         line_type)
 
@@ -372,6 +387,7 @@ def knots_nonint(segments,list_intervals,left_end_bool,right_end_bool,line_c_int
     for i in range(0,L-2,2):
         while mid_knot<=list_intervals[i+1]-1:
             tuple_one_list=[mid_knot-1,mid_knot,"blank",mid_knot+1,mid_knot+2]; blank_ind=3
+                      
             gen_knots(segments,mid_knot,line_c_int,line_c_frac,div,div2,tuple_one_list,blank_ind,list_knots_nonint,\
             line_type)
             mid_knot=mid_knot+1  
@@ -379,6 +395,7 @@ def knots_nonint(segments,list_intervals,left_end_bool,right_end_bool,line_c_int
     
     while mid_knot<=right_end_int-1:
         tuple_one_list=[mid_knot-1,mid_knot,"blank",mid_knot+1,mid_knot+2]; blank_ind=3
+                 
         gen_knots(segments,mid_knot,line_c_int,line_c_frac,div,div2,tuple_one_list,blank_ind,list_knots_nonint,\
         line_type)
         mid_knot=mid_knot+1
@@ -409,9 +426,10 @@ def gen_knots(segments,index,line_c_int,line_c_frac,div,div2,tuple_one_list,blan
             segments_frac_val=segments_int_val.get(key_frac_val)
             tuple_two = find_intersection(segments_frac_val.head,line_c_int,line_c_frac,div) 
             if tuple_two is not None:
+        
                 tuple_one_list[blank_ind-1]=index+key_frac_val/div2  
                 tuple_one=tuple(tuple_one_list) 
-                
+                                
                 tuple_merged = form_tuple(tuple_one,tuple_two,line_type)  
                 list_knots_nonint.append(tuple_merged)
     
@@ -438,7 +456,58 @@ def find_knots(left_end,right_end,line_c_int,line_c_frac,div):
     else: 
         return (line_c_int-1,line_c_int,line_c_int+line_c_frac/div,line_c_int+1,line_c_int+2)
 
+#####################################################################
+#BLOCK: here we print the final list of knots of basis functions 
+#####################################################################
+def print_basis_knots(list_knots):     
+    
+    for list_knots_tuple in list_knots:  
+        print(list_knots_tuple)       
 
+##########################################################################
+#BLOCK: here we draw a spline from the list of knots 
+##########################################################################
+def add_bspline2d(z,knotx,knoty,cell_div):  
+    left_x = knotx[0]; right_x = knotx[4]; bottom_y=knoty[0]; top_y=knoty[4]
+    a = BSpline.basis_element(knotx,extrapolate=False)
+    b = BSpline.basis_element(knoty,extrapolate=False)    
+    for i in range(left_x,right_x):
+        for j in range(bottom_y,top_y):
+            for k in range(0,cell_div): 
+                for m in range(0,cell_div): 
+                    z[i*cell_div+k,j*cell_div+m] = z[i*cell_div+k,j*cell_div+m] + a(i + k/cell_div)*b(j + m/cell_div)
+    
+    return z
+   
+def draw_spline(list_knots,hcells,vcells): 
+    cell_div=5
+
+    hsize = hcells*cell_div+1; vsize = vcells*cell_div+1
+    hsize_complex = (hcells*cell_div+1)*1j; vsize_complex = (vcells*cell_div+1)*1j 
+
+    # get points for a mesh grid
+    z = np.zeros((hsize,vsize))
+
+    x, y = np.mgrid[0:hcells:hsize_complex, 0:vcells:vsize_complex] 
+
+    for list_knot_tuple in list_knots: 
+        knotx = list(list_knot_tuple[0]); knoty = list(list_knot_tuple[1]) 
+        z = add_bspline2d(z,knotx,knoty,cell_div) 
+
+    # create a new figure for plotting
+    fig = plt.figure()
+    
+    # create a new subplot on our figure
+    spline_fig = fig.add_subplot(projection='3d')
+
+    # plotting the curve
+    spline_fig.plot_wireframe(x, y, z, rstride = 1, cstride = 1, linewidth = 1)
+    
+    plt.show()
+
+##########################################################################
+#BLOCK: main program 
+##########################################################################
 
 # polynomial degree is equal to 3  - it is fixed! 
 poldegree=3
@@ -447,12 +516,27 @@ hcells=15;  vcells=15
 # here we define in how many parts we divide a cell horizontally and vertically  
 hdiv=10;  vdiv=10    
 # number of lines dropped on a grid
-nlines=7
+nlines=100
 
-#Lines = generate_hv_lines(hcells,vcells,hdiv,vdiv,poldegree,nlines)
-#Lines = [(0,3,1,5,6),(0,7,4,2,13),(1,2,6,8,9),(1,4,7,1,8),(0,5,1,2,7),(0,3,1,10,13),(0,3,1,6,9),(1,2,6,10,13),
-#         (1,2,6,4,7),(1,2,6,7,11),(0,3,1,4,14)]
-Lines = [(0,3,1,2,12),(1,2,6,1,9),(1,4,4,2,7),(0,5,7,0,11),(1,8,3,3,11),(0,6,2,1,12),(0,8,3,2,14)]
+
+# in the following array we will store the knots of the B-spline basis functions
+list_knots =[] 
+
+# here we randomly generate lines that we "drop" on a mesh   
+Lines = generate_hv_lines(hcells,vcells,hdiv,vdiv,poldegree,nlines)
+
+##################################################
+#Test 1: 
+# Lines = [(0,3,1,2,12),(1,2,6,1,9),(1,4,4,2,7),(0,5,7,0,11),(1,8,3,3,11),(0,6,2,1,12),(0,8,3,2,14)]
+##################################################
+# Test 2: Lines=[(0,3,1,7,14),(1,2,6,1,9),(0,5,2,1,15),(0,3,3,1,15)]
+##################################################
+#Test 3: 
+#Lines=[(0,3,1,8,14),(0,3,1,8,15)]
+#######################
+
+draw_mesh(hcells,vcells,Lines,hdiv,vdiv) # here we draw a mesh
+
 hsegments={}; vsegments={}
 
 for Lines_tuple in Lines:  
@@ -460,45 +544,38 @@ for Lines_tuple in Lines:
     if Lines_tuple[0]==0:
         hline_y_int=Lines_tuple[1];hline_y_frac=Lines_tuple[2];hline_xmin=Lines_tuple[3];hline_xmax=Lines_tuple[4]
          
-        list_intervals,left_end_bool,right_end_bool= gen_list_int_main(hsegments,hline_y_int,hline_y_frac,\
-        hline_xmin,hline_xmax)      
+        list_intervals,left_end_bool,right_end_bool= gen_list_int_main(hsegments,hline_y_int,hline_y_frac,hline_xmin,\
+                                                                       hline_xmax)      
             
-        #print(); print(list_intervals,left_end_bool,right_end_bool)
+        if list_intervals: 
+            list_knots_int=knots_int(list_intervals,left_end_bool,right_end_bool,0,hcells,vcells,hline_y_int,\
+                                     hline_y_frac,vdiv) 
 
-        list_knots_int=knots_int(list_intervals,left_end_bool,right_end_bool,0,hcells,vcells,hline_y_int,\
-        hline_y_frac,vdiv) 
+            list_knots_nonint=knots_nonint(vsegments,list_intervals,left_end_bool,right_end_bool,hline_y_int,\
+                                           hline_y_frac,vdiv,hdiv,0,hcells,vcells)
+            
+            list_knots = list_knots +  list_knots_int + list_knots_nonint # here we update list_knots
 
-        list_knots_nonint=knots_nonint(vsegments,list_intervals,left_end_bool,right_end_bool,hline_y_int,\
-        hline_y_frac,vdiv,hdiv,0)
-        
-        print()   
-        for list_knots_nonint_tuple in list_knots_nonint: print(list_knots_nonint_tuple)       
-
-        update_hsegments(hsegments,hline_y_int,hline_y_frac,hline_xmin, hline_xmax)
+            update_hsegments(hsegments,hline_y_int,hline_y_frac,hline_xmin, hline_xmax)
     else: 
         vline_x_int=Lines_tuple[1];vline_x_frac=Lines_tuple[2];vline_ymin=Lines_tuple[3];vline_ymax=Lines_tuple[4]
 
         list_intervals,left_end_bool,right_end_bool= gen_list_int_main(vsegments,vline_x_int,vline_x_frac,\
-        vline_ymin,vline_ymax)      
+                                                                       vline_ymin,vline_ymax)      
+                   
+        if list_intervals:
+            list_knots_int=knots_int(list_intervals,left_end_bool,right_end_bool,1,hcells,vcells,vline_x_int,\
+                                     vline_x_frac,hdiv) 
+
+            list_knots_nonint=knots_nonint(hsegments,list_intervals,left_end_bool,right_end_bool,vline_x_int,\
+                                           vline_x_frac,hdiv,vdiv,1,hcells,vcells)
+
+            list_knots = list_knots +  list_knots_int + list_knots_nonint # here we update list_knots
             
-        #print(); print(list_intervals,left_end_bool,right_end_bool)       
-
-        list_knots_int=knots_int(list_intervals,left_end_bool,right_end_bool,1,hcells,vcells,vline_x_int,\
-        vline_x_frac,hdiv) 
-
-        list_knots_nonint=knots_nonint(hsegments,list_intervals,left_end_bool,right_end_bool,vline_x_int,\
-        vline_x_frac,hdiv,vdiv,1)
+            update_vsegments(vsegments,vline_x_int,vline_x_frac,vline_ymin,vline_ymax)    
         
-        print()   
-        for list_knots_nonint_tuple in list_knots_nonint: print(list_knots_nonint_tuple)
-        
-        update_vsegments(vsegments,vline_x_int,vline_x_frac,vline_ymin,vline_ymax)    
     
-    
-
-
-#print(); display_segments(hsegments); print(); display_segments(vsegments)
-
-
-# here we draw a mesh 
-draw_mesh(hcells,vcells,Lines,hdiv,vdiv)
+print_basis_knots(list_knots) # here we print a list of knots  
+print("The number of new added basis functions:",len(list_knots)) # here we print a total number of new basis functions 
+draw_spline(list_knots,hcells,vcells) # here we draw a spline 
+ 
