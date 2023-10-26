@@ -1,101 +1,20 @@
-from scipy.interpolate import BSpline
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import axes3d
-from matplotlib import style
-import numpy as np
-import random 
 import gc
-#######################################################################################
-# BLOCK : here we generate lines and draw a grid 
-#######################################################################################
-# here is a function drawing a $n \times m$ grid 
-def draw_initial_grid(n,m,fig): 
-    plt.xlim([0,n]),plt.ylim([0,m])    
-    for i in range(1,n):
-        plt.vlines(x=i,ymin=0,ymax=m,color='black',linewidth=0.5)     
-    for j in range(1,m): 
-        plt.hlines(y=j,xmin=0,xmax=n,color='black',linewidth=0.5)
-    plt.tick_params(left = False, bottom = False) # here we remove ticks 
 
-    return fig       
+################################################
+# my modules 
+################################################
+import draw_mesh_module
+import line_generator_module
+import record_lines_module
+import record_knots_module
+import draw_spline_module
+################################################
 
-# tossing a coin: vertical or horizontal line 
-def tosscoin():
-    return random.randint(0,1)
 
-# in this function we randomly generate a vertical line segment
-def generate_vertical_line(n,m,d,l):
-    i = random.randint(0,n-1)   
-    j = random.randint(1,d-1) 
-    vline_ymin = random.randint(0,m-l) 
-    vline_ymax = random.randint(vline_ymin + l,m) 
-
-    return i, j, vline_ymin, vline_ymax
-
-# in this function we draw a vertical line segment on a grid 
-def draw_vertical_line(vline_x, vline_ymin, vline_ymax, fig):       
-    plt.vlines(x=vline_x,ymin=vline_ymin,ymax=vline_ymax,color='black',linewidth=0.5)
-    
-    return fig
-    
-# in this function we randomly generate a horizontal line segment 
-def generate_horizontal_line(n,m,d,l): 
-    i = random.randint(0,m-1)  
-    j = random.randint(1,d-1)    
-    hline_xmin = random.randint(0,n-l)  
-    hline_xmax = random.randint(hline_xmin + l,n) 
-
-    return i, j, hline_xmin, hline_xmax  
-
-# in this function we draw a horizontal line segment on a grid
-def draw_horizontal_line(hline_y, hline_xmin, hline_xmax,fig):  
-    plt.hlines(y=hline_y,xmin=hline_xmin,xmax=hline_xmax,color='black',linewidth=0.5)
-
-    return fig
-
-# here we create a list of lines; 0 means a horizontal line; 1 means a vertical line 
-def generate_hv_lines(hcells,vcells,hdiv,vdiv,poldegree,nlines):    
-    Lines=[]       
-    for i in range(nlines):
-        if tosscoin()==0:
-            hline_y_int, hline_y_frac, hline_xmin, hline_xmax  = generate_horizontal_line(hcells,vcells,vdiv,poldegree)
-            tuple = (0,hline_y_int, hline_y_frac, hline_xmin, hline_xmax)
-            Lines.append(tuple)
-        else:            
-            vline_x_int, vline_x_frac, vline_ymin, vline_ymax = generate_vertical_line(hcells,vcells,hdiv,poldegree)
-            tuple = (1,vline_x_int, vline_x_frac, vline_ymin, vline_ymax)
-            Lines.append(tuple)
-    
-    return Lines 
-
-# here we draw lines from a given list 
-def draw_lines (Lines,fig,hdiv,vdiv):     
-    nlines = len(Lines) 
-    for i in range(nlines): 
-        tuple = Lines[i]
-        if tuple[0]==0: 
-            hline_y_int = tuple[1]; hline_y_frac=tuple[2] 
-            hline_xmin = tuple[3]; hline_xmax = tuple[4]
-            hline_y = hline_y_int + hline_y_frac/vdiv
-            fig = draw_horizontal_line(hline_y,hline_xmin,hline_xmax,fig)
-        else: 
-            vline_x_int = tuple[1]; vline_x_frac = tuple[2]  
-            vline_ymin = tuple[3]; vline_ymax = tuple[4]
-            vline_x = vline_x_int + vline_x_frac/hdiv    
-            fig = draw_vertical_line(vline_x, vline_ymin, vline_ymax,fig)
-
-    return fig
-
-# here we draw a mesh
-def draw_mesh(hcells,vcells,Lines,hdiv,vdiv):      
-    fig =  plt.figure()  
-    fig = draw_initial_grid(hcells,vcells,fig) 
-    draw_lines(Lines,fig,hdiv,vdiv)
-
-    plt.show()
-#########################################################################################
+###############################################################################
 #BLOCK : here we update a tree of segments
-#########################################################################################
+###############################################################################
+
 # here we update a tree of horizontal segments  
 def update_hsegments(hsegments,hline_y_int,hline_y_frac,hline_xmin, hline_xmax):
     new_segment=(hline_xmin,hline_xmax)
@@ -149,7 +68,7 @@ def  display_segments(segments):
             segment_list=segments_frac_val.get(frac_val)
             segment_list.display_list(segment_list.head)      
 ##################################################################
-#BLOCK : here use doubly linked list for storing line segments   
+#BLOCK : here we use doubly linked list for storing line segments   
 ##################################################################
 # node creation
 class Node:
@@ -240,10 +159,10 @@ def insert_right_end(d_linked_list,current_node,new_seg_l,new_seg_r):
                 d_linked_list.deleteNode(current_node)
                 current_node=current_node.next      
     return d_linked_list         
-#######################################################################################
+###############################################################################
 # BLOCK : generate new subsegments 
-#######################################################################################
-# generating a list of new subsegments after inserting a segment (main function)
+###############################################################################
+#generating a list of new subsegments after inserting a segment (main function)
 def gen_list_int_main(segments,line_c_int,line_c_frac,line_min,line_max):
     segments_int_val=segments.get(line_c_int)
     if segments_int_val is not None: 
@@ -455,55 +374,7 @@ def find_knots(left_end,right_end,line_c_int,line_c_frac,div):
         return (line_c_int-2,line_c_int-1,line_c_int,line_c_int+line_c_frac/div,line_c_int+1)    
     else: 
         return (line_c_int-1,line_c_int,line_c_int+line_c_frac/div,line_c_int+1,line_c_int+2)
-
-#####################################################################
-#BLOCK: here we print the final list of knots of basis functions 
-#####################################################################
-def print_basis_knots(list_knots):     
-    
-    for list_knots_tuple in list_knots:  
-        print(list_knots_tuple)       
-
-##########################################################################
-#BLOCK: here we draw a spline from the list of knots 
-##########################################################################
-def add_bspline2d(z,knotx,knoty,cell_div):  
-    left_x = knotx[0]; right_x = knotx[4]; bottom_y=knoty[0]; top_y=knoty[4]
-    a = BSpline.basis_element(knotx,extrapolate=False)
-    b = BSpline.basis_element(knoty,extrapolate=False)    
-    for i in range(left_x,right_x):
-        for j in range(bottom_y,top_y):
-            for k in range(0,cell_div): 
-                for m in range(0,cell_div): 
-                    z[i*cell_div+k,j*cell_div+m] = z[i*cell_div+k,j*cell_div+m] + a(i + k/cell_div)*b(j + m/cell_div)
-    
-    return z
-   
-def draw_spline(list_knots,hcells,vcells): 
-    cell_div=5
-
-    hsize = hcells*cell_div+1; vsize = vcells*cell_div+1
-    hsize_complex = (hcells*cell_div+1)*1j; vsize_complex = (vcells*cell_div+1)*1j 
-
-    # get points for a mesh grid
-    z = np.zeros((hsize,vsize))
-
-    x, y = np.mgrid[0:hcells:hsize_complex, 0:vcells:vsize_complex] 
-
-    for list_knot_tuple in list_knots: 
-        knotx = list(list_knot_tuple[0]); knoty = list(list_knot_tuple[1]) 
-        z = add_bspline2d(z,knotx,knoty,cell_div) 
-
-    # create a new figure for plotting
-    fig = plt.figure()
-    
-    # create a new subplot on our figure
-    spline_fig = fig.add_subplot(projection='3d')
-
-    # plotting the curve
-    spline_fig.plot_wireframe(x, y, z, rstride = 1, cstride = 1, linewidth = 1)
-    
-    plt.show()
+       
 
 ##########################################################################
 #BLOCK: main program 
@@ -511,32 +382,28 @@ def draw_spline(list_knots,hcells,vcells):
 
 # polynomial degree is equal to 3  - it is fixed! 
 poldegree=3
+
 # here we define the number of horizontal and vertical cells 
 hcells=15;  vcells=15 
 # here we define in how many parts we divide a cell horizontally and vertically  
 hdiv=10;  vdiv=10    
 # number of lines dropped on a grid
-nlines=100
+nlines=10
 
+# here we randomly generate lines that are "dropped" on a mesh   
+Lines = line_generator_module.generate_hv_lines(hcells,vcells,hdiv,vdiv,
+                                                poldegree,nlines)
 
-# in the following array we will store the knots of the B-spline basis functions
+# here we record generated lines in a text file 
+record_lines_module.save_lines(Lines)
+
+# here we draw a mesh
+draw_mesh_module.draw_mesh(hcells,vcells,Lines,hdiv,vdiv) 
+
+# in this array we will store the knots of the B-spline basis functions
 list_knots =[] 
 
-# here we randomly generate lines that we "drop" on a mesh   
-Lines = generate_hv_lines(hcells,vcells,hdiv,vdiv,poldegree,nlines)
-
-##################################################
-#Test 1: 
-# Lines = [(0,3,1,2,12),(1,2,6,1,9),(1,4,4,2,7),(0,5,7,0,11),(1,8,3,3,11),(0,6,2,1,12),(0,8,3,2,14)]
-##################################################
-# Test 2: Lines=[(0,3,1,7,14),(1,2,6,1,9),(0,5,2,1,15),(0,3,3,1,15)]
-##################################################
-#Test 3: 
-#Lines=[(0,3,1,8,14),(0,3,1,8,15)]
-#######################
-
-draw_mesh(hcells,vcells,Lines,hdiv,vdiv) # here we draw a mesh
-
+# in these dictionaries we will store horizontal/vertical segments
 hsegments={}; vsegments={}
 
 for Lines_tuple in Lines:  
@@ -574,8 +441,9 @@ for Lines_tuple in Lines:
             
             update_vsegments(vsegments,vline_x_int,vline_x_frac,vline_ymin,vline_ymax)    
         
-    
-print_basis_knots(list_knots) # here we print a list of knots  
-print("The number of new added basis functions:",len(list_knots)) # here we print a total number of new basis functions 
-draw_spline(list_knots,hcells,vcells) # here we draw a spline 
+# here we save a list of knots in a file    
+record_knots_module.save_knots(list_knots)   
+
+# here we draw a spline
+draw_spline_module.draw_spline(list_knots,hcells,vcells)  
  
