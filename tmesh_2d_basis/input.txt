@@ -1,0 +1,9 @@
+% the first number is the number of horizontal cells
+% the second number is the number of vertical cells 
+% the third number defines in how many parts each cell is divided horizontally
+% the fourth number defines in how many parts each cell is divided vertically 
+15
+15
+10
+10
+
